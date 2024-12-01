@@ -19,8 +19,15 @@
                             Size="Large"
                             KeyTip="B1"
                             ShowText="True"
-                            Text="Tool Panel"
+                            Text="Button 1"
                             Orientation="Vertical"/>
+
+		  <local:NWRibbonButton x:Uid="Button_2" Id="ID_Button_2"
+					Size="Large"
+					KeyTip="B2"
+					ShowText="True"
+					Text="Button 2"
+					Orientation="Vertical"/>
 
       </RibbonPanelSource>
     </RibbonPanel>
