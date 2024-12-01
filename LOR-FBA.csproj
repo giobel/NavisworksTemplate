@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA\</OutputPath>
+    <OutputPath>..\..\..\..\..\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA.bundle\Contents\2025\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -71,8 +71,8 @@
   <PropertyGroup>
     <PostBuildEvent>set path=C:\Users\GioJu\source\repos\LOR-FBA\LORFBAAddin.xaml
 
-set addinPath=C:\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA
-set addinPathLang=C:\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA\en-US\
+set addinPath=C:\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA.bundle\Contents\2025
+set addinPathLang=C:\ProgramData\Autodesk\ApplicationPlugins\LOR-FBA.bundle\Contents\2025\en-US\
 
 mkdir "%25addinPathLang%25"
 

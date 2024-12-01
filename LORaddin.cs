@@ -10,7 +10,7 @@ namespace LOR_FBA
     [Plugin("LORFBAAddin","FBA",DisplayName ="LOR-FBA")]
     [RibbonLayout("LORFBAAddin.xaml")]
     [RibbonTab("ID_CustomTab_1",DisplayName ="LOR-FBA")]
-    [Command("ID_Button_1",ToolTip = "Test")]
+    [Command("ID_Button_1", Icon = "1_16.ico", LargeIcon = "1_32.ico", ToolTip = "Test")]
     public class LORaddin : CommandHandlerPlugin
     {
         public override int ExecuteCommand(string name, params string[] parameters)
