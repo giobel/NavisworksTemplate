@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <!-- BEGIN STANDARD SECTION DO NOT EDIT 
     except for ensuring x:Uid="CustomRibbonTab" has a unique ID
     -->
@@ -19,15 +19,30 @@
                             Size="Large"
                             KeyTip="B1"
                             ShowText="True"
-                            Text="Add Tab"
+                            Text="Add TimeLiner + Tab"
                             Orientation="Vertical"/>
 
-		  <local:NWRibbonButton x:Uid="Button_2" Id="ID_Button_2"
-					Size="Large"
-					KeyTip="B2"
-					ShowText="True"
-					Text="Copy Properties"
-					Orientation="Vertical"/>
+        <local:NWRibbonButton x:Uid="Button_2" Id="ID_Button_2"
+            Size="Large"
+            KeyTip="B2"
+            ShowText="True"
+            Text="Remove TimeLiner + Tab"
+            Orientation="Vertical"/>
+
+          <local:NWRibbonButton x:Uid="Button_3" Id="ID_Button_3"
+            Size="Large"
+            KeyTip="B3"
+            ShowText="True"
+            Text="Copy TimeLiner Properties"
+            Orientation="Vertical"/>
+
+          <local:NWRibbonButton x:Uid="Button_4" Id="ID_Button_4"
+            Size="Large"
+            KeyTip="B4"
+            ShowText="True"
+            Text="Rename 
+            TimeLiner Properties"
+            Orientation="Vertical"/>
 
       </RibbonPanelSource>
     </RibbonPanel>
