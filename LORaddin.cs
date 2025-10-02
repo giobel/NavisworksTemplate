@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using swf = System.Windows.Forms;
 using System.Text;
@@ -42,5 +42,22 @@ namespace LOR_FBA
             }
             return 0;
         }
+
+
+           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    }
 }
