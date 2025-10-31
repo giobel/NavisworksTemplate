@@ -53,7 +53,7 @@ namespace BasicPlugIn
 
             // current document (.NET)
             Document doc = Application.ActiveDocument;
-            
+
             ModelItemCollection selectedItems = doc.CurrentSelection.SelectedItems;
 
             InwOpState10 cdoc = ComApiBridge.State;
@@ -73,80 +73,70 @@ namespace BasicPlugIn
                 foreach (PropertyCategory category in item.PropertyCategories)
                 {
                     if (category.DisplayName == "Element")
-                        {
-                            //System.Windows.Forms.MessageBox.Show(category.DisplayName);
-                            foreach (DataProperty prop in category.Properties)
-                            {
-                            // if (prop.DisplayName == "LOR_UniqueID") // or use internal name
-                            // {
-                            string value = "";
-                            try
-                            {
-                                var v = prop.Value;
-                                // Check the data type and access the value accordingly
-                                value = v.ToString();
-        
-                            }
-                            catch (Exception ex)
-                            {
-                                value = ex.Message;
-                            }
-                            // Do something with value
-                            //line += $"{prop.DisplayName}||{value},";
-                            sb.AppendLine($"{item.InstanceGuid},{prop.DisplayName},{value}");
-
-
-                                // System.Windows.Forms.MessageBox.Show(value);
-                                // }
-                            }
-                        }
-                }
-                //remove last comma
-                //line = line.Remove(line.Length - 1);
-                //sb.AppendLine(line);
-
-                InwOaPath comPath = ComApiBridge.ToInwOaPath(item);
-                InwGUIPropertyNode2 propNode = (InwGUIPropertyNode2)ComApiBridge.State.GetGUIPropertyNode(comPath, true);
-
-                //Get PropertyCategoryCollection data
-                InwGUIAttributesColl propCol = cpropcates.GUIAttributes();
-
-
-                InwOaPropertyVec newCategory = (InwOaPropertyVec)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaPropertyVec, null, null);
-                DateTime dt = DateTime.Now;  // or your target datetime
-
-                newCategory.Properties().Add(AddProperty(cdoc, "Dump Date", dt));
-
-                foreach (PropertyCategory category in item.PropertyCategories)
-                {
-                    if (category.DisplayName == "SRC_FBA")
                     {
                         //System.Windows.Forms.MessageBox.Show(category.DisplayName);
                         foreach (DataProperty prop in category.Properties)
                         {
                             // if (prop.DisplayName == "LOR_UniqueID") // or use internal name
                             // {
-                            string value = prop.Value.ToDisplayString();
+                            string value = GetPropertyValue(prop);
                             // Do something with value
-                            sb.AppendLine($"{prop.DisplayName}, {value}");
+                            //line += $"{prop.DisplayName}||{value},";
+                            
+                            sb.AppendLine($"{item.InstanceGuid},{prop.DisplayName},{value},{prop.Value.DataType}");
 
 
-                            newCategory.Properties().Add(AddProperty(cdoc, prop.DisplayName, value));
                             // System.Windows.Forms.MessageBox.Show(value);
                             // }
                         }
                     }
                 }
+                //remove last comma
+                //line = line.Remove(line.Length - 1);
+                //sb.AppendLine(line);
+
+            //     InwOaPath comPath = ComApiBridge.ToInwOaPath(item);
+            //     InwGUIPropertyNode2 propNode = (InwGUIPropertyNode2)ComApiBridge.State.GetGUIPropertyNode(comPath, true);
+
+            //     //Get PropertyCategoryCollection data
+            //     InwGUIAttributesColl propCol = cpropcates.GUIAttributes();
 
 
-                            try
-                            {
-                                cpropcates.SetUserDefined(1, "SRC FBA22", "SRC_FBA22", newCategory);
-                            }
-                            catch
-                            {
-                                cpropcates.SetUserDefined(0, "SRC FBA22", "SRC_FBA22", newCategory);
-                            }
+            //     InwOaPropertyVec newCategory = (InwOaPropertyVec)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaPropertyVec, null, null);
+            //     DateTime dt = DateTime.Now;  // or your target datetime
+
+            //     newCategory.Properties().Add(AddProperty(cdoc, "Dump Date", dt));
+
+            //     foreach (PropertyCategory category in item.PropertyCategories)
+            //     {
+            //         if (category.DisplayName == "SRC_FBA")
+            //         {
+            //             //System.Windows.Forms.MessageBox.Show(category.DisplayName);
+            //             foreach (DataProperty prop in category.Properties)
+            //             {
+            //                 // if (prop.DisplayName == "LOR_UniqueID") // or use internal name
+            //                 // {
+            //                 string value = prop.Value.ToDisplayString();
+            //                 // Do something with value
+            //                 sb.AppendLine($"{prop.DisplayName}, {value}");
+
+
+            //                 newCategory.Properties().Add(AddProperty(cdoc, prop.DisplayName, value));
+            //                 // System.Windows.Forms.MessageBox.Show(value);
+            //                 // }
+            //             }
+            //         }
+            //     }
+
+
+            //     try
+            //     {
+            //         cpropcates.SetUserDefined(1, "SRC FBA22", "SRC_FBA22", newCategory);
+            //     }
+            //     catch
+            //     {
+            //         cpropcates.SetUserDefined(0, "SRC FBA22", "SRC_FBA22", newCategory);
+            //     }
 
             }
 
@@ -159,6 +149,98 @@ namespace BasicPlugIn
         }
 
 
+        string GetPropertyValue(DataProperty prop)
+        {
+            if (prop == null || prop.Value == null)
+                return "";
+
+            var v = prop.Value;
+
+            if (v.IsDisplayString)
+                return v.ToDisplayString();
+
+            if (v.IsDouble)
+                return v.ToDouble().ToString();
+
+            if (v.IsAnyDouble)
+                return v.ToAnyDouble().ToString();
+
+            if (v.IsInt32)
+                return v.ToInt32().ToString();
+
+            if (v.IsBoolean)
+                return v.ToBoolean().ToString();
+
+            if (v.IsNamedConstant)
+            {
+                string nc = ExtractInsideParentheses(v.ToString());
+                return $"{CsvQuote(nc)},NamedConstant";
+            }
+
+            if (v.IsDateTime)
+                return v.ToDateTime().ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Fallback — safe catch-all
+            return v.ToString();
+        }
+
+
+string GetPropertyValueAndType(DataProperty prop)
+        {
+            if (prop == null || prop.Value == null)
+                return "";
+
+            var v = prop.Value;
+
+            if (v.IsDisplayString)
+                return $"{v.ToDisplayString()},DisplayString";
+
+            if (v.IsDouble)
+                return $"{v.ToDouble()},Double";
+
+            if (v.IsAnyDouble)
+                return $"{v.ToAnyDouble()},AnyDouble";
+
+            if (v.IsInt32)
+                return $"{v.ToInt32()},Int32";
+
+            if (v.IsBoolean)
+                return $"{v.ToBoolean()},Boolean";
+
+            if (v.IsNamedConstant)
+            {
+                //var nc = v.ToNamedConstant();
+                string nc = ExtractInsideParentheses(v.ToString());
+            return $"{CsvQuote(nc)},NamedConstant";
+            }
+
+            if (v.IsDateTime)
+                return $"{v.ToDateTime():yyyy-MM-dd HH:mm:ss},DateTime";
+
+            // Fallback — safe catch-all
+            return $"{v.ToString()},Unknown";
+        }
+
+string ExtractInsideParentheses(string input)
+{
+    if (string.IsNullOrEmpty(input))
+        return "";
+
+    int start = input.IndexOf('(');
+    int end = input.LastIndexOf(')');
+
+    if (start < 0 || end < 0 || end <= start)
+        return input;
+
+    return input.Substring(start + 1, end - start - 1);
+}
+string CsvQuote(string value)
+{
+    if (value.Contains(",") || value.Contains("\""))
+        return $"\"{value.Replace("\"", "\"\"")}\"";
+
+    return value;
+}
 
         public InwOaPropertyVec GetPropertiesFromTask()
         {
@@ -196,15 +278,17 @@ namespace BasicPlugIn
             prop.value = v;
             return prop;
         }
-        
-                private DateTime ToUtc(DateTime dt)
+
+        private DateTime ToUtc(DateTime dt)
         {
 
-                DateTime time = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Millisecond, DateTimeKind.Local);
-                return TimeZone.CurrentTimeZone.ToUniversalTime(time);
- 
+            DateTime time = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Millisecond, DateTimeKind.Local);
+            return TimeZone.CurrentTimeZone.ToUniversalTime(time);
+
         }
 
     }
+    
+    
 }
 #endregion

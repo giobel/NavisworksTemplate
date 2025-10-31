@@ -51,8 +51,13 @@ namespace BasicPlugIn
 
     public class Import : AddInPlugin                        //Derives from AddInPlugin
     {
+        
+        
         public override int Execute(params string[] parameters)
         {
+
+            DateTime dt = DateTime.Now;  // or your target datetime
+
             // current document (.NET)
             Document doc = Application.ActiveDocument;
             ModelItemEnumerableCollection moicc = doc.Models.CreateCollectionFromRootItems().DescendantsAndSelf;
@@ -69,7 +74,7 @@ namespace BasicPlugIn
             // }
 
 
-            ModelItemCollection selectedItems = doc.CurrentSelection.SelectedItems;
+            //ModelItemCollection selectedItems = doc.CurrentSelection.SelectedItems;
 
             InwOpState10 cdoc = ComApiBridge.State;
 
@@ -77,63 +82,150 @@ namespace BasicPlugIn
 
             string inputFile = @"C:\Temp\output.csv";
 
-            var properties = new Dictionary<string, string>();
-
+            List<ItemProperty> excelData = new List<ItemProperty>();
 
             foreach (var line in File.ReadAllLines(inputFile))
             {
+
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
                 // Split by comma or tab
-                var parts = line.Split(new[] { ',', '\t' }, 2, StringSplitOptions.None);
-                if (parts.Length == 2)
+                var parts = line.Split(new[] { ',', '\t' }, 4, StringSplitOptions.None);
+
+                if (parts.Length < 4) continue;
+
+                string propType = parts[3].Trim();
+                string propValue = parts[2].Trim();
+
+                if (IsCsvQuoted(propValue))
                 {
-                    string key = parts[0].Trim();
-                    string value = parts[1].Trim();
-                    properties[key] = value;
+                    propValue = CsvUnquote(propValue);
                 }
+
+                var propValueObject = AssignObjectType(propValue, propType);
+
+                excelData.Add(new ItemProperty
+                {
+                    Guid = parts[0].Trim(),
+                    PropName = parts[1].Trim(),
+                    PropValue = propValueObject,
+                });
+
             }
 
+            var grouped = excelData
+                            .GroupBy(i => i.Guid)
+                            .ToDictionary(
+                                g => g.Key,
+                                g => g.Select(x => new { x.PropName, x.PropValue }).ToList()
+                            );
 
 
-            IEnumerable<ModelItem> foundItems = moicc.WhereInstanceGuid(targetGuid);
-
-            // EXTRACT PROPERTY - DISABLED BECAUSE IS SLOW
-            foreach (ModelItem item in selectedItems)
+            foreach (var kvp in grouped)
             {
-                InwOaPath citem = (InwOaPath)ComApiBridge.ToInwOaPath(item);
-                // Get item's PropertyCategoryCollection
-                InwGUIPropertyNode2 cpropcates = (InwGUIPropertyNode2)cdoc.GetGUIPropertyNode(citem, true);
-
-                //Get PropertyCategoryCollection data
-                InwGUIAttributesColl propCol = cpropcates.GUIAttributes();
-
+                string guid = kvp.Key;
+                var props = kvp.Value;
 
                 InwOaPropertyVec newCategory = (InwOaPropertyVec)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaPropertyVec, null, null);
-                DateTime dt = DateTime.Now;  // or your target datetime
 
                 newCategory.Properties().Add(AddProperty(cdoc, "Dump Date", dt));
 
+                IEnumerable<ModelItem> foundItems = moicc.WhereInstanceGuid(new Guid(guid));
 
-                foreach (var kvp in properties)
+                foreach (var prop in props)
+                {
+                    //string name = prop.PropName;
+
+                    // var parts = prop.PropValue.Split(new[] { ':' }, 2);
+                    // string value = parts.Length == 2 ? parts[1] : prop.PropValue;
+
+                    // add property to Navisworks item here
+                    newCategory.Properties().Add(AddProperty(cdoc, prop.PropName, prop.PropValue));
+                    //newCategory.Properties().Add(ApplyPropertyValueFromType(cdoc, prop.PropName, prop.PropValue, prop.PropType));
+                }
+
+                if (foundItems.Count() > 0)
+                {
+                    foreach (ModelItem item in foundItems)
                     {
-                        newCategory.Properties().Add(AddProperty(cdoc, kvp.Key, kvp.Value));
+                        InwOaPath citem = (InwOaPath)ComApiBridge.ToInwOaPath(item);
+                        // Get item's PropertyCategoryCollection
+                        InwGUIPropertyNode2 cpropcates = (InwGUIPropertyNode2)cdoc.GetGUIPropertyNode(citem, true);
+
+                        //Get PropertyCategoryCollection data
+                        InwGUIAttributesColl propCol = cpropcates.GUIAttributes();
+
+
+
+                        try
+                        {
+                            cpropcates.SetUserDefined(1, "Excel Data", "Excel Data", newCategory);
+                        }
+                        catch
+                        {
+                            cpropcates.SetUserDefined(0, "Excel Data", "Excel Data", newCategory);
+                        }
+
                     }
-
-
-
-                try
-                {
-                    cpropcates.SetUserDefined(1, "SRC FBA22", "SRC_FBA22", newCategory);
                 }
-                catch
-                {
-                    cpropcates.SetUserDefined(0, "SRC FBA22", "SRC_FBA22", newCategory);
-                }
+            }
+
+            foreach (var data in excelData)
+            {
+
+
+
 
             }
 
+
+
+
+            //swf.MessageBox.Show(foundItems.Count().ToString());
+
+
+
+
+
+
+
+            /*
+                        // EXTRACT PROPERTY - DISABLED BECAUSE IS SLOW
+                        foreach (ModelItem item in selectedItems)
+                        {
+                            InwOaPath citem = (InwOaPath)ComApiBridge.ToInwOaPath(item);
+                            // Get item's PropertyCategoryCollection
+                            InwGUIPropertyNode2 cpropcates = (InwGUIPropertyNode2)cdoc.GetGUIPropertyNode(citem, true);
+
+                            //Get PropertyCategoryCollection data
+                            InwGUIAttributesColl propCol = cpropcates.GUIAttributes();
+
+
+                            InwOaPropertyVec newCategory = (InwOaPropertyVec)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaPropertyVec, null, null);
+                            DateTime dt = DateTime.Now;  // or your target datetime
+
+                            newCategory.Properties().Add(AddProperty(cdoc, "Dump Date", dt));
+
+
+                            foreach (var kvp in properties)
+                                {
+                                    newCategory.Properties().Add(AddProperty(cdoc, kvp.Key, kvp.Value));
+                                }
+
+
+
+                            try
+                            {
+                                cpropcates.SetUserDefined(1, "SRC FBA22", "SRC_FBA22", newCategory);
+                            }
+                            catch
+                            {
+                                cpropcates.SetUserDefined(0, "SRC FBA22", "SRC_FBA22", newCategory);
+                            }
+
+                        }
+            */
 
             // Show the names in a message box
             System.Windows.Forms.MessageBox.Show("Done");
@@ -170,9 +262,147 @@ namespace BasicPlugIn
 
             DateTime time = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Millisecond, DateTimeKind.Local);
             return TimeZone.CurrentTimeZone.ToUniversalTime(time);
-
         }
 
+
+        private object AssignObjectType(string value, string type)
+        {
+            switch (type)
+            {
+                case "DisplayString":
+                case "String":
+                    return value;
+
+                case "Double":
+                case "AnyDouble":
+                    if (double.TryParse(value, out double d))
+                        return d;
+                    return value;
+
+                case "Int32":
+                    if (int.TryParse(value, out int i32))
+                        return i32;
+                    return value;
+
+                case "Boolean":
+                    if (bool.TryParse(value, out bool b))
+                        return b;
+                    return value;
+
+                // case "NamedConstant":
+                //     // You saved the name, now map enum back
+                //     var nc = FindNamedConstant(item, propName, value);
+                //     if (nc != null)
+                //         v.FromNamedConstant(nc);
+                //     else
+                //         v.FromString(value); // fallback
+                //     break;
+
+                case "DateTime":
+                    if (DateTime.TryParse(value, out DateTime dt))
+                        return dt;
+                    return value;
+
+                default:
+                    return value;
+            }
+                }
+private InwOaProperty  ApplyPropertyValueFromType(
+    InwOpState10 cdoc,
+    string propName,
+    string value,
+    string type)
+{
+
+            InwOaProperty prop = (InwOaProperty)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaProperty, null, null);
+            prop.name = propName;
+            prop.UserName = propName;
+
+
+    VariantData v = new VariantData();
+
+            try
+            {
+                switch (type)
+                {
+                    case "DisplayString":
+                    case "String":
+                        v = VariantData.FromDisplayString(value);
+                        break;
+
+                    case "Double":
+                    case "AnyDouble":
+                        if (double.TryParse(value, out double d))
+                            v = VariantData.FromDouble(d);
+                        break;
+
+                    case "Int32":
+                        if (int.TryParse(value, out int i32))
+                            v = VariantData.FromInt32(i32);
+                        break;
+
+                    case "Boolean":
+                        if (bool.TryParse(value, out bool b))
+                            v = VariantData.FromBoolean(b);
+                        break;
+
+                    // case "NamedConstant":
+                    //     // You saved the name, now map enum back
+                    //     var nc = FindNamedConstant(item, propName, value);
+                    //     if (nc != null)
+                    //         v.FromNamedConstant(nc);
+                    //     else
+                    //         v.FromString(value); // fallback
+                    //     break;
+
+                    case "DateTime":
+                        if (DateTime.TryParse(value, out DateTime dt))
+                            v = VariantData.FromDateTime(dt);
+                        break;
+
+                    default:
+                        v = VariantData.FromDisplayString(value);
+                        break;
+                }
+
+                // Write back
+                prop.value = v;
+                return prop;
     }
+            catch
+            {
+                return null;
+            }
+}
+
+        string CsvUnquote(string input)
+{
+    if (string.IsNullOrEmpty(input))
+        return input;
+
+    input = input.Trim();
+
+    // If wrapped in quotes, remove outer quotes
+    if (input.StartsWith("\"") && input.EndsWith("\""))
+        input = input.Substring(1, input.Length - 2);
+
+    // Replace doubled quotes ("") with actual quote (")
+    input = input.Replace("\"\"", "\"");
+
+    return input;
+}
+bool IsCsvQuoted(string value)
+{
+    return value.StartsWith("\"") && value.EndsWith("\"");
+}
+    }
+
+    public class ItemProperty
+    {
+        public string Guid { get; set; }
+        public string PropName { get; set; }
+        public object PropValue { get; set; }
+        public string PropType { get; set; }
+}
 }
 #endregion
