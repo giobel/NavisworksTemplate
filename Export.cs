@@ -83,7 +83,7 @@ namespace BasicPlugIn
                             // Do something with value
                             //line += $"{prop.DisplayName}||{value},";
                             
-                            sb.AppendLine($"{item.InstanceGuid},{prop.DisplayName},{value},{prop.Value.DataType}");
+                            sb.AppendLine($"{item.InstanceGuid},{prop.Name},{prop.DisplayName},{value},{prop.Value.DataType}");
 
 
                             // System.Windows.Forms.MessageBox.Show(value);
@@ -156,8 +156,18 @@ namespace BasicPlugIn
 
             var v = prop.Value;
 
+
             if (v.IsDisplayString)
                 return v.ToDisplayString();
+
+            if (v.DataType.ToString() == "DoubleVolume")
+                return UnitConvert.Ft3ToMeters3(v.ToAnyDouble()).ToString();
+
+            if (v.DataType.ToString() == "DoubleLength")
+                return UnitConvert.FtToMeters(v.ToAnyDouble()).ToString();
+
+            if (v.DataType.ToString() == "DoubleArea")
+                return UnitConvert.Ft2ToMeters2(v.ToAnyDouble()).ToString();
 
             if (v.IsDouble)
                 return v.ToDouble().ToString();
@@ -184,6 +194,24 @@ namespace BasicPlugIn
             return v.ToString();
         }
 
+public static class UnitConvert
+{
+    private const double FtToM = 0.3048;
+    private const double Ft2ToM2 = 0.09290304;
+    private const double Ft3ToM3 = 0.028316846592;
+
+    // === LENGTH ===
+    public static double FtToMeters(double ft) => ft * FtToM;
+    public static double MetersToFt(double m) => m / FtToM;
+
+    // === AREA ===
+    public static double Ft2ToMeters2(double ft2) => ft2 * Ft2ToM2;
+    public static double Meters2ToFt2(double m2) => m2 / Ft2ToM2;
+
+    // === VOLUME ===
+    public static double Ft3ToMeters3(double ft3) => ft3 * Ft3ToM3;
+    public static double Meters3ToFt3(double m3) => m3 / Ft3ToM3;
+}
 
 string GetPropertyValueAndType(DataProperty prop)
         {

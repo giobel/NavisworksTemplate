@@ -91,12 +91,12 @@ namespace BasicPlugIn
                     continue;
 
                 // Split by comma or tab
-                var parts = line.Split(new[] { ',', '\t' }, 4, StringSplitOptions.None);
+                var parts = line.Split(new[] { ',', '\t' }, 5, StringSplitOptions.None);
 
-                if (parts.Length < 4) continue;
+                if (parts.Length < 5) continue;
 
-                string propType = parts[3].Trim();
-                string propValue = parts[2].Trim();
+                string propType = parts[4].Trim();
+                string propValue = parts[3].Trim();
 
                 if (IsCsvQuoted(propValue))
                 {
@@ -104,11 +104,15 @@ namespace BasicPlugIn
                 }
 
                 var propValueObject = AssignObjectType(propValue, propType);
+                //var propValueObject = CreateVariantData(propValue, propType);
+
+                //swf.MessageBox.Show($"create variant {propValueObject.DataType}");
 
                 excelData.Add(new ItemProperty
                 {
                     Guid = parts[0].Trim(),
                     PropName = parts[1].Trim(),
+                    PropDisplayName = parts[2].Trim(),
                     PropValue = propValueObject,
                 });
 
@@ -118,7 +122,7 @@ namespace BasicPlugIn
                             .GroupBy(i => i.Guid)
                             .ToDictionary(
                                 g => g.Key,
-                                g => g.Select(x => new { x.PropName, x.PropValue }).ToList()
+                                g => g.Select(x => new { x.PropName, x.PropDisplayName, x.PropValue }).ToList()
                             );
 
 
@@ -141,7 +145,8 @@ namespace BasicPlugIn
                     // string value = parts.Length == 2 ? parts[1] : prop.PropValue;
 
                     // add property to Navisworks item here
-                    newCategory.Properties().Add(AddProperty(cdoc, prop.PropName, prop.PropValue));
+                    
+                    newCategory.Properties().Add(AddProperty(cdoc, prop.PropName, prop.PropDisplayName, prop.PropValue));
                     //newCategory.Properties().Add(ApplyPropertyValueFromType(cdoc, prop.PropName, prop.PropValue, prop.PropType));
                 }
 
@@ -246,11 +251,23 @@ namespace BasicPlugIn
         }
 
 
-        private InwOaProperty AddProperty(InwOpState10 cdoc, string name, object dt)
+
+        // private InwOaProperty AddProperty(InwOpState10 cdoc, string name, VariantData vd)
+        // {
+        //     InwOaProperty prop = (InwOaProperty)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaProperty, null, null);
+        //     prop.name = name;
+        //     prop.UserName = name;
+        //     prop.value = vd;
+        //     return prop;
+        // }
+
+
+
+        private InwOaProperty AddProperty(InwOpState10 cdoc, string name, string DisplayName, object dt)
         {
             InwOaProperty prop = (InwOaProperty)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaProperty, null, null);
             prop.name = name;
-            prop.UserName = name;
+            prop.UserName = DisplayName;
 
             var v = dt;
             prop.value = v;
@@ -265,6 +282,63 @@ namespace BasicPlugIn
         }
 
 
+        private VariantData CreateVariantData(string value, string type)
+        {
+            //swf.MessageBox.Show($"{value}-{type}");
+
+            VariantData v = new VariantData();
+
+            switch (type)
+            {
+                case "DisplayString":
+                case "String":
+                    v = VariantData.FromDisplayString(value);
+                    break;
+
+                case "Double":
+                case "AnyDouble":
+                    if (double.TryParse(value, out double d))
+                        v = VariantData.FromDouble(d);
+                    break;
+                case "DoubleVolume":
+                    if (double.TryParse(value, out double dVol))
+                    {
+                        v = VariantData.FromDoubleVolume(dVol);
+                    }
+                    break;
+
+                case "Int32":
+                    if (int.TryParse(value, out int i32))
+                        v = VariantData.FromInt32(i32); ;
+                    break;
+
+                case "Boolean":
+                    if (bool.TryParse(value, out bool b))
+                        v = VariantData.FromBoolean(b);
+                    break;
+
+                // case "NamedConstant":
+                //     // You saved the name, now map enum back
+                //     var nc = FindNamedConstant(item, propName, value);
+                //     if (nc != null)
+                //         v.FromNamedConstant(nc);
+                //     else
+                //         v.FromString(value); // fallback
+                //     break;
+
+                case "DateTime":
+                    if (DateTime.TryParse(value, out DateTime dt))
+                        v = VariantData.FromDateTime(dt);
+                    break;
+
+                default:
+                    v = VariantData.FromDisplayString(value);
+                    break;
+            }
+            
+            return v;
+                }
+
         private object AssignObjectType(string value, string type)
         {
             switch (type)
@@ -275,10 +349,14 @@ namespace BasicPlugIn
 
                 case "Double":
                 case "AnyDouble":
+                case "DoubleVolume":
                     if (double.TryParse(value, out double d))
                         return d;
                     return value;
-
+                case "DoubleLength":
+                    if (double.TryParse(value, out double dl))
+                        return dl;
+                    return value;
                 case "Int32":
                     if (int.TryParse(value, out int i32))
                         return i32;
@@ -306,7 +384,7 @@ namespace BasicPlugIn
                 default:
                     return value;
             }
-                }
+        }
 private InwOaProperty  ApplyPropertyValueFromType(
     InwOpState10 cdoc,
     string propName,
@@ -319,7 +397,7 @@ private InwOaProperty  ApplyPropertyValueFromType(
             prop.UserName = propName;
 
 
-    VariantData v = new VariantData();
+            VariantData v = new VariantData();
 
             try
             {
@@ -401,8 +479,8 @@ bool IsCsvQuoted(string value)
     {
         public string Guid { get; set; }
         public string PropName { get; set; }
+        public string PropDisplayName { get; set; }
         public object PropValue { get; set; }
-        public string PropType { get; set; }
 }
 }
 #endregion
