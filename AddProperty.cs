@@ -35,6 +35,7 @@ using Autodesk.Navisworks.Api.Plugins;
 using Autodesk.Navisworks.Api.Interop.ComApi;
 using ComApiBridge = Autodesk.Navisworks.Api.ComApi.ComApiBridge;
 using Autodesk.Navisworks.Api.Timeliner;
+using System.Linq;
 
 
 namespace BasicPlugIn
@@ -46,6 +47,7 @@ namespace BasicPlugIn
 
    public class AddProperty : AddInPlugin                        //Derives from AddInPlugin
    {
+      
       public override int Execute(params string[] parameters)
       {
             // current document (.NET)
@@ -88,10 +90,19 @@ namespace BasicPlugIn
 
                         double meters = 123.45;
                         VariantData vd = new VariantData(meters, VariantDataType.DoubleLength);
-                     
-                        newProp.value = VariantData.FromDisplayString("m");;
+                        // //VariantData vd = VariantData.FromDoubleLength(123.45);
 
-                        newCategory.Properties().Add(newProp);
+                        NamedConstant nc = new NamedConstant("displayname");
+                        DataProperty dp = new DataProperty(nc, vd);
+
+                        VariantData v = dp.Value;
+
+
+                        
+
+                        //newProp.value = vd.ToDoubleLength();
+                        newProp.value = $"{v.ToDoubleLength():F2} m";
+                        //newCategory.Properties().Add(newProp);
 
                         // InwOaProperty unitProp = (InwOaProperty)cdoc.ObjectFactory(nwEObjectType.eObjectType_nwOaProperty, null, null);
 
@@ -99,7 +110,25 @@ namespace BasicPlugIn
                         // unitProp.value = VariantData.FromDisplayString("m");
                         //  newCategory.Properties().Add(unitProp);
 
-                        cpropcates.SetUserDefined(1, "Excel Data", "Excel Data", newCategory);
+                        // Numeric
+                        InwOaProperty valProp = (InwOaProperty)cdoc.ObjectFactory(
+                            nwEObjectType.eObjectType_nwOaProperty, null, null);
+                        valProp.name = "LengthVal";
+                        valProp.UserName = "Length Value";
+                        valProp.value = 123.45;
+
+                        // Unit
+                        InwOaProperty unitProp = (InwOaProperty)cdoc.ObjectFactory(
+                            nwEObjectType.eObjectType_nwOaProperty, null, null);
+                        unitProp.name = "LengthUnit";
+                        unitProp.UserName = "Length Unit";
+                        unitProp.value = "mm";
+
+
+                        newCategory.Properties().Add(valProp);
+
+                        newCategory.Properties().Add(unitProp);
+                        cpropcates.SetUserDefined(0, "Excel Data", "Excel Data", newCategory);
                     
 
 
@@ -117,6 +146,8 @@ namespace BasicPlugIn
          return 0;
       }
 
+        
+   
  // add new property to existing category
         public InwOaPropertyVec AddNewPropertyToExtgCategory(InwGUIAttribute2 propertyCategory)
         {
