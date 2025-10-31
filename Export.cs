@@ -37,6 +37,7 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace BasicPlugIn
 {
@@ -61,6 +62,31 @@ namespace BasicPlugIn
             var sb = new StringBuilder();
 
 
+            var categories = new HashSet<string>();
+
+            // Loop through all the items
+            foreach (var item in selectedItems)
+            {
+                // Access the item's property collections
+                PropertyCategoryCollection propertyCategories = item.PropertyCategories;
+
+                foreach (var category in propertyCategories)
+                {
+                    // Add each category to the HashSet (automatically handles duplicates)
+                    categories.Add(category.DisplayName);
+                }
+            }
+
+            ObservableCollection<string> observableCategoryList = new ObservableCollection<string>(categories);
+
+
+            var form = new LOR_FBA.ExportPanel(observableCategoryList);
+
+
+            form.ShowDialog();
+
+            //swf.MessageBox.Show(form.SelectedCategory);
+
             // EXTRACT PROPERTY - DISABLED BECAUSE IS SLOW
             foreach (ModelItem item in selectedItems)
             {
@@ -72,7 +98,7 @@ namespace BasicPlugIn
 
                 foreach (PropertyCategory category in item.PropertyCategories)
                 {
-                    if (category.DisplayName == "Element")
+                    if (category.DisplayName == form.SelectedCategory)
                     {
                         //System.Windows.Forms.MessageBox.Show(category.DisplayName);
                         foreach (DataProperty prop in category.Properties)
@@ -82,8 +108,23 @@ namespace BasicPlugIn
                             string value = GetPropertyValue(prop);
                             // Do something with value
                             //line += $"{prop.DisplayName}||{value},";
+
+                            string propDisplayName = prop.DisplayName;
+
+                            switch (prop.Value.DataType)
+                            {
+                                case VariantDataType.DoubleLength:
+                                    propDisplayName += " (m)";
+                                    break;
+                                case VariantDataType.DoubleArea:
+                                    propDisplayName += " (m²)";
+                                    break;
+                                case VariantDataType.DoubleVolume:
+                                    propDisplayName += " (m³)";
+                                    break;
+                            }
                             
-                            sb.AppendLine($"{item.InstanceGuid},{prop.Name},{prop.DisplayName},{value},{prop.Value.DataType}");
+                            sb.AppendLine($"{item.InstanceGuid},{prop.Name},{propDisplayName},{value},{prop.Value.DataType}");
 
 
                             // System.Windows.Forms.MessageBox.Show(value);
@@ -184,7 +225,7 @@ namespace BasicPlugIn
             if (v.IsNamedConstant)
             {
                 string nc = ExtractInsideParentheses(v.ToString());
-                return $"{CsvQuote(nc)},NamedConstant";
+                return $"{CsvQuote(nc)}";
             }
 
             if (v.IsDateTime)

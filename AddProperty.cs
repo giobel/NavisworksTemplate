@@ -116,6 +116,7 @@ namespace BasicPlugIn
                         valProp.name = "LengthVal";
                         valProp.UserName = "Length Value";
                         valProp.value = 123.45;
+                        
 
                         // Unit
                         InwOaProperty unitProp = (InwOaProperty)cdoc.ObjectFactory(
