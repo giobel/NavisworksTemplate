@@ -22,6 +22,8 @@ namespace LOR_FBA
     /// </summary>
     public partial class ExportPanel : Window
     {
+        public string ExportFilePath {get; set; }
+
         public ObservableCollection<string> CategoryList { get; set; }
         public List<string> SelectedCategories { get; set; }
         public ExportPanel(ObservableCollection<string> categoryList)
@@ -29,13 +31,15 @@ namespace LOR_FBA
             InitializeComponent();
             this.DataContext = this;
             CategoryList = categoryList;
+            ExportFilePath = "C:\\Temp\\navisExport.csv"; // Default path
         }
-
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             // Clear previous selections
             SelectedCategories = new List<string>();
+
+            
 
             // Add selected items to the list
             foreach (var item in categoryListBox.SelectedItems)

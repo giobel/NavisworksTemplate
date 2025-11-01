@@ -57,6 +57,12 @@ namespace BasicPlugIn
 
             ModelItemCollection selectedItems = doc.CurrentSelection.SelectedItems;
 
+            if (selectedItems.Count == 0)
+            {
+                swf.MessageBox.Show("Please select some items first.");
+                return 0;
+            }
+
             InwOpState10 cdoc = ComApiBridge.State;
 
             var sb = new StringBuilder();
@@ -99,8 +105,6 @@ namespace BasicPlugIn
                 // Get item's PropertyCategoryCollection
                 InwGUIPropertyNode2 cpropcates = (InwGUIPropertyNode2)cdoc.GetGUIPropertyNode(citem, true);
 
-                //string line = $"{item.InstanceGuid},";
-
                 foreach (PropertyCategory category in item.PropertyCategories)
                 {
                     if (form.SelectedCategories.Contains(category.DisplayName))
@@ -108,11 +112,8 @@ namespace BasicPlugIn
                         //System.Windows.Forms.MessageBox.Show(category.DisplayName);
                         foreach (DataProperty prop in category.Properties)
                         {
-                            // if (prop.DisplayName == "LOR_UniqueID") // or use internal name
-                            // {
+
                             string value = GetPropertyValue(prop);
-                            // Do something with value
-                            //line += $"{prop.DisplayName}||{value},";
 
                             string propDisplayName = prop.DisplayName;
 
@@ -186,7 +187,7 @@ namespace BasicPlugIn
 
             }
 
-            File.WriteAllText(@"C:\Temp\output.csv", sb.ToString());
+            File.WriteAllText(form.filePathTextBox.Text, sb.ToString());
 
 
             // Show the names in a message box
