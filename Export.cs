@@ -85,6 +85,11 @@ namespace BasicPlugIn
 
             form.ShowDialog();
 
+            if (form.DialogResult == false)
+            {
+                return 0;
+            }
+
             //swf.MessageBox.Show(form.SelectedCategory);
 
             // EXTRACT PROPERTY - DISABLED BECAUSE IS SLOW
@@ -98,7 +103,7 @@ namespace BasicPlugIn
 
                 foreach (PropertyCategory category in item.PropertyCategories)
                 {
-                    if (category.DisplayName == form.SelectedCategory)
+                    if (form.SelectedCategories.Contains(category.DisplayName))
                     {
                         //System.Windows.Forms.MessageBox.Show(category.DisplayName);
                         foreach (DataProperty prop in category.Properties)

@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -22,7 +23,7 @@ namespace LOR_FBA
     public partial class ExportPanel : Window
     {
         public ObservableCollection<string> CategoryList { get; set; }
-        public string SelectedCategory { get; set; }
+        public List<string> SelectedCategories { get; set; }
         public ExportPanel(ObservableCollection<string> categoryList)
         {
             InitializeComponent();
@@ -30,13 +31,17 @@ namespace LOR_FBA
             CategoryList = categoryList;
         }
 
-        private void CategoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            SelectedCategory = CategoryComboBox.SelectedItem as string;
-        }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            // Clear previous selections
+            SelectedCategories = new List<string>();
+
+            // Add selected items to the list
+            foreach (var item in categoryListBox.SelectedItems)
+            {
+                SelectedCategories.Add(item.ToString());
+            }
             DialogResult = true;
         }
     }
